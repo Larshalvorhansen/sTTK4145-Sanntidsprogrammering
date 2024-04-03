@@ -1,6 +1,6 @@
 # How to run the elevators
 
 1. Set the parameters in config.go to determine the number of elevators, number of floors etc.
-2. Run the command `go run main.go -port=xxxx -id=x`. Alternatively run `program` with the same command line arguments.\
+2. Run the command `go run main.go -port=xxxx -id=x`. Alternatively run the `program` executable with the same command line arguments.\
 The id's must be integers and the first id has to be 0. Additional elevators increment the id with 1.
 3. Enjoy the ride(s)
