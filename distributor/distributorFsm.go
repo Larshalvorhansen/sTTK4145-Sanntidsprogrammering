@@ -23,7 +23,7 @@ func Distributor(
 	newLocalStateC			<-chan elevator.State,
 	networkTx				chan<- CommonState,
 	networkRx 				<-chan CommonState,
-	confirmedCommonstateC	chan<- CommonState,
+	confirmedCsC			chan<- CommonState,
 	peersC 					<-chan peers.PeerUpdate,
 	id 						int,
 	){
@@ -40,7 +40,7 @@ func Distributor(
 	var cs CommonState
 
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
-	heartbeatTimer := time.NewTicker(config.HeartbeatTime)
+	heartbeat := time.NewTicker(config.HeartbeatTime)
 
 	idle := true
 	notOnNetwork := false
@@ -52,12 +52,11 @@ func Distributor(
 			fmt.Println("Lost connection to network")
 			notOnNetwork = true
 
-		case P := <-peersC:
-			peers = P
+		case peers = <-peersC:
 			cs.makeOthersUnavailable(id)
 			idle = false
 
-		case <-heartbeatTimer.C:
+		case <-heartbeat.C:
 			networkTx <- cs
 
 		default:
@@ -113,23 +112,22 @@ func Distributor(
 				}
 
 			case newOrder := <-addOrderC:
-				if cs.States[id].State.Motorstop {
-					break
+				if !cs.States[id].State.Motorstop {
+					cs.Ackmap[id] = Acked
+					cs.addCabCall(newOrder, id)
+					confirmedCsC <- cs
 				}
-				cs.Ackmap[id] = Acked
-				cs.addCabCall(newOrder, id)
-				confirmedCommonstateC <- cs
 
 			case orderToRemove := <-deliveredOrderC:
 				cs.Ackmap[id] = Acked
 				cs.removeOrder(orderToRemove, id)
-				confirmedCommonstateC <- cs
+				confirmedCsC <- cs
 
 			case newLocalState := <-newLocalStateC:
 				if !(newLocalState.Obstructed || newLocalState.Motorstop) {
 					cs.Ackmap[id] = Acked
 					cs.updateLocalState(newLocalState, id)
-					confirmedCommonstateC <- cs
+					confirmedCsC <- cs
 				}
 
 			default:
@@ -151,7 +149,7 @@ func Distributor(
 
 				case arrivedCs.fullyAcked(id):
 					cs = arrivedCs
-					confirmedCommonstateC <- cs
+					confirmedCsC <- cs
 					switch {
 					case cs.Origin != id && stashType != None:
 						cs.prepNewCs(id)

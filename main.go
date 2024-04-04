@@ -35,7 +35,7 @@ func main() {
 	newOrderC 				:= make(chan elevator.Orders, config.Buffer)
 	deliveredOrderC 		:= make(chan elevio.ButtonEvent, config.Buffer)
 	newLocalStateC  		:= make(chan elevator.State, config.Buffer)
-	confirmedCommonstateC 	:= make(chan distributor.CommonState, config.Buffer)
+	confirmedCsC		 	:= make(chan distributor.CommonState, config.Buffer)
 	networkTx 				:= make(chan distributor.CommonState, config.Buffer)
 	networkRx 				:= make(chan distributor.CommonState, config.Buffer)
 	peersRx 				:= make(chan peers.PeerUpdate, config.Buffer)
@@ -52,7 +52,7 @@ func main() {
 		newLocalStateC,
 		networkTx,
 		networkRx,
-		confirmedCommonstateC,
+		confirmedCsC,
 		peersRx,
 		id)
 
@@ -63,7 +63,7 @@ func main() {
 
 	for {
 		select {
-		case cs := <-confirmedCommonstateC:
+		case cs := <-confirmedCsC:
 			localOrder := assigner.CalculateOptimalOrders(cs, id)
 			newOrderC <- localOrder
 			lights.SetLights(cs, id)
