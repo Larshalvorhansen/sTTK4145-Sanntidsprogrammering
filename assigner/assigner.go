@@ -7,7 +7,6 @@ import (
 	"root/config"
 	"root/distributor"
 	"root/elevator"
-	"root/elevio"
 	"runtime"
 	"strconv"
 )
@@ -75,20 +74,4 @@ func CalculateOptimalOrders(cs distributor.CommonState, id int) elevator.Orders 
 	}
 
 	return (*output)[strconv.Itoa(id)]
-}
-
-func SetLights(cs distributor.CommonState, id int) elevator.Orders {
-	var lights elevator.Orders
-
-	for f := 0; f < config.NumFloors; f++ {
-		for b := 0; b < 2; b++ {
-			lights[f][b] = cs.HallRequests[f][b]
-		}
-	}
-
-	for f := 0; f < config.NumFloors; f++ {
-		lights[f][elevio.BT_Cab] = cs.States[id].CabRequests[f]
-	}
-
-	return lights
 }
