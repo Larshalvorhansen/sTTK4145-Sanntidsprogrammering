@@ -19,14 +19,13 @@ var id int
 
 func main() {
 
-	port := flag.Int("port", 15301, "<-- Default verdi, men kan overskrives som en command line argument ved bruk av -port=xxxxx")
-	elevatorId := flag.Int("id", 0, "<-- Default verdi, men kan overskrives som en command line argument ved bruk av -id=xxxxx")
+	port := flag.Int("port", 15657, "<-- Default value, override with command line argument -port=xxxxx")
+	elevatorId := flag.Int("id", 0, "<-- Default value, override with command line argument -id=xxxxx")
 	flag.Parse()
 
 	Port = *port
 	id = *elevatorId
 
-	fmt.Println()
 	elevio.Init("localhost:"+strconv.Itoa(Port), config.NumFloors)
 
 	fmt.Println("Elevator initialized with ID", id, "on port", Port)
