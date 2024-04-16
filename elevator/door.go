@@ -25,8 +25,8 @@ func Door(
 	go elevio.PollObstructionSwitch(obstructionC)
 
 	obstruction := false
-	ds := Closed
 	timeCounter := time.NewTimer(time.Hour)
+	ds := Closed
 	timeCounter.Stop()
 
 	for {
