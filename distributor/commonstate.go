@@ -37,11 +37,11 @@ func (cs *CommonState) addOrder(newCall elevio.ButtonEvent, id int) {
 	}
 }
 
-func (cs *CommonState) removeOrder(deliveredAssingement elevio.ButtonEvent, id int) {
-	if deliveredAssingement.Button == elevio.BT_Cab {
-		cs.States[id].CabRequests[deliveredAssingement.Floor] = false
+func (cs *CommonState) removeOrder(deliveredOrder elevio.ButtonEvent, id int) {
+	if deliveredOrder.Button == elevio.BT_Cab {
+		cs.States[id].CabRequests[deliveredOrder.Floor] = false
 	} else {
-		cs.HallRequests[deliveredAssingement.Floor][deliveredAssingement.Button] = false
+		cs.HallRequests[deliveredOrder.Floor][deliveredOrder.Button] = false
 	}
 }
 
