@@ -19,25 +19,25 @@ const (
 )
 
 func Distributor(
-	confirmedCsC chan<- CommonState,
+	confirmedCsC 	chan<- CommonState,
 	deliveredOrderC <-chan elevio.ButtonEvent,
-	newStateC <-chan elevator.State,
-	networkTx chan<- CommonState,
-	networkRx <-chan CommonState,
-	peersC <-chan peers.PeerUpdate,
-	id int,
+	newStateC 		<-chan elevator.State,
+	networkTx 		chan<- CommonState,
+	networkRx 		<-chan CommonState,
+	peersC 			<-chan peers.PeerUpdate,
+	id 				int,
 ) {
 
 	newOrderC := make(chan elevio.ButtonEvent, config.Buffer)
 
 	go elevio.PollButtons(newOrderC)
 
-	var stashType StashType
-	var newOrder elevio.ButtonEvent
-	var deliveredOrder elevio.ButtonEvent
-	var newState elevator.State
-	var peers peers.PeerUpdate
-	var cs CommonState
+	var stashType 		StashType
+	var newOrder 		elevio.ButtonEvent
+	var deliveredOrder 	elevio.ButtonEvent
+	var newState 		elevator.State
+	var peers 			peers.PeerUpdate
+	var cs 				CommonState
 
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
 	heartbeat := time.NewTicker(config.HeartbeatTime)

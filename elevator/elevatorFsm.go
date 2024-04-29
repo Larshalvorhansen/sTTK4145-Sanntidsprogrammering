@@ -28,16 +28,16 @@ func (b Behaviour) ToString() string {
 }
 
 func Elevator(
-	newOrderC		<-chan Orders,
-	deliveredOrderC	chan<- elevio.ButtonEvent,
-	newStateC		chan<- State,
+	newOrderC 		<-chan Orders,
+	deliveredOrderC chan<- elevio.ButtonEvent,
+	newStateC 		chan<- State,
 ) {
 
-	doorOpenC		:= make(chan bool, 16)
-	doorClosedC		:= make(chan bool, 16)
-	floorEnteredC	:= make(chan int)
-	obstructedC		:= make(chan bool, 16)
-	motorC			:= make(chan bool, 16)
+	doorOpenC 		:= make(chan bool, 16)
+	doorClosedC 	:= make(chan bool, 16)
+	floorEnteredC 	:= make(chan int)
+	obstructedC 	:= make(chan bool, 16)
+	motorC 			:= make(chan bool, 16)
 
 	go Door(doorClosedC, doorOpenC, obstructedC)
 	go elevio.PollFloorSensor(floorEnteredC)
