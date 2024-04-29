@@ -28,16 +28,16 @@ func (b Behaviour) ToString() string {
 }
 
 func Elevator(
-	newOrderC 		<-chan Orders,
-	deliveredOrderC chan<- elevio.ButtonEvent,
-	newLocalStateC 	chan<- State,
+	newOrderC		<-chan Orders,
+	deliveredOrderC	chan<- elevio.ButtonEvent,
+	newStateC		chan<- State,
 ) {
 
-	doorOpenC 		:= make(chan bool, 16)
-	doorClosedC 	:= make(chan bool, 16)
-	floorEnteredC 	:= make(chan int)
-	obstructedC 	:= make(chan bool, 16)
-	motorC 			:= make(chan bool, 16)
+	doorOpenC		:= make(chan bool, 16)
+	doorClosedC		:= make(chan bool, 16)
+	floorEnteredC	:= make(chan int)
+	obstructedC		:= make(chan bool, 16)
+	motorC			:= make(chan bool, 16)
 
 	go Door(doorClosedC, doorOpenC, obstructedC)
 	go elevio.PollFloorSensor(floorEnteredC)
@@ -61,13 +61,13 @@ func Elevator(
 					state.Behaviour = Moving
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
-					newLocalStateC <- state
+					newStateC <- state
 
 				case orders[state.Floor][state.Direction.Opposite()]:
 					doorOpenC <- true
 					state.Direction = state.Direction.Opposite()
 					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
-					newLocalStateC <- state
+					newStateC <- state
 
 				case orders.OrderInDirection(state.Floor, state.Direction.Opposite()):
 					state.Direction = state.Direction.Opposite()
@@ -75,11 +75,11 @@ func Elevator(
 					state.Behaviour = Moving
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
-					newLocalStateC <- state
+					newStateC <- state
 
 				default:
 					state.Behaviour = Idle
-					newLocalStateC <- state
+					newStateC <- state
 				}
 			default:
 				panic("DoorClosed in wrong state")
@@ -134,7 +134,7 @@ func Elevator(
 			default:
 				panic("FloorEntered in wrong state")
 			}
-			newLocalStateC <- state
+			newStateC <- state
 
 		case orders = <-newOrderC:
 			switch state.Behaviour {
@@ -144,19 +144,19 @@ func Elevator(
 					doorOpenC <- true
 					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
-					newLocalStateC <- state
+					newStateC <- state
 
 				case orders[state.Floor][state.Direction.Opposite()]:
 					doorOpenC <- true
 					state.Direction = state.Direction.Opposite()
 					OrderDone(state.Floor, state.Direction, orders, deliveredOrderC)
 					state.Behaviour = DoorOpen
-					newLocalStateC <- state
+					newStateC <- state
 
 				case orders.OrderInDirection(state.Floor, state.Direction):
 					elevio.SetMotorDirection(state.Direction.toMD())
 					state.Behaviour = Moving
-					newLocalStateC <- state
+					newStateC <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
 
@@ -164,7 +164,7 @@ func Elevator(
 					state.Direction = state.Direction.Opposite()
 					elevio.SetMotorDirection(state.Direction.toMD())
 					state.Behaviour = Moving
-					newLocalStateC <- state
+					newStateC <- state
 					motorTimer = time.NewTimer(config.WatchdogTime)
 					motorC <- false
 				default:
@@ -187,18 +187,18 @@ func Elevator(
 			if !state.Motorstop {
 				fmt.Println("Lost motor power")
 				state.Motorstop = true
-				newLocalStateC <- state
+				newStateC <- state
 			}
 		case obstruction := <-obstructedC:
 			if obstruction != state.Obstructed {
 				state.Obstructed = obstruction
-				newLocalStateC <- state
+				newStateC <- state
 			}
 		case motor := <-motorC:
 			if state.Motorstop {
 				fmt.Println("Regained motor power")
 				state.Motorstop = motor
-				newLocalStateC <- state
+				newStateC <- state
 			}
 		}
 	}

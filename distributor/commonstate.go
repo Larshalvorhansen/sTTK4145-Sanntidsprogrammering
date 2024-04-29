@@ -37,6 +37,12 @@ func (cs *CommonState) addOrder(newCall elevio.ButtonEvent, id int) {
 	}
 }
 
+func (cs *CommonState) addCabCall(newCall elevio.ButtonEvent, id int) {
+	if newCall.Button == elevio.BT_Cab {
+		cs.States[id].CabRequests[newCall.Floor] = true
+	}
+}
+
 func (cs *CommonState) removeOrder(deliveredOrder elevio.ButtonEvent, id int) {
 	if deliveredOrder.Button == elevio.BT_Cab {
 		cs.States[id].CabRequests[deliveredOrder.Floor] = false
@@ -45,13 +51,7 @@ func (cs *CommonState) removeOrder(deliveredOrder elevio.ButtonEvent, id int) {
 	}
 }
 
-func (cs *CommonState) addCabCall(newCall elevio.ButtonEvent, id int) {
-	if newCall.Button == elevio.BT_Cab {
-		cs.States[id].CabRequests[newCall.Floor] = true
-	}
-}
-
-func (cs *CommonState) updateLocalState(localState elevator.State, id int) {
+func (cs *CommonState) updateState(localState elevator.State, id int) {
 	cs.States[id] = LocalState{
 		State:       localState,
 		CabRequests: cs.States[id].CabRequests,

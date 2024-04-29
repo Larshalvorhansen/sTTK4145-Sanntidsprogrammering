@@ -12,45 +12,45 @@ import (
 type StashType int
 
 const (
-	None	StashType = iota
-	Remove
+	None StashType = iota
 	Add
+	Remove
 	State
 )
 
 func Distributor(
-	deliveredOrderC 	<-chan elevio.ButtonEvent,
-	newLocalStateC		<-chan elevator.State,
-	networkTx			chan<- CommonState,
-	networkRx 			<-chan CommonState,
-	confirmedCsC		chan<- CommonState,
-	peersC 				<-chan peers.PeerUpdate,
-	id 					int,
-	){
+	confirmedCsC chan<- CommonState,
+	deliveredOrderC <-chan elevio.ButtonEvent,
+	newStateC <-chan elevator.State,
+	networkTx chan<- CommonState,
+	networkRx <-chan CommonState,
+	peersC <-chan peers.PeerUpdate,
+	id int,
+) {
 
-	addOrderC := make(chan elevio.ButtonEvent, config.Buffer)
+	newOrderC := make(chan elevio.ButtonEvent, config.Buffer)
 
-	go elevio.PollButtons(addOrderC)
+	go elevio.PollButtons(newOrderC)
 
-	var removeStash elevio.ButtonEvent
-	var addStash 	elevio.ButtonEvent
-	var stateStash 	elevator.State
-	var stashType 	StashType
-	var peers 		peers.PeerUpdate
-	var cs 			CommonState
+	var stashType StashType
+	var newOrder elevio.ButtonEvent
+	var deliveredOrder elevio.ButtonEvent
+	var newState elevator.State
+	var peers peers.PeerUpdate
+	var cs CommonState
 
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
 	heartbeat := time.NewTicker(config.HeartbeatTime)
 
 	idle := true
-	notOnNetwork := false
+	offline := false
 
 	for {
 		select {
 		case <-disconnectTimer.C:
 			cs.makeOthersUnavailable(id)
 			fmt.Println("Lost connection to network")
-			notOnNetwork = true
+			offline = true
 
 		case peers = <-peersC:
 			cs.makeOthersUnavailable(id)
@@ -65,33 +65,30 @@ func Distributor(
 		switch {
 		case idle:
 			select {
-			case newOrder := <-addOrderC:
+			case newOrder = <-newOrderC:
 				stashType = Add
-				addStash = newOrder
 				cs.prepNewCs(id)
 				cs.addOrder(newOrder, id)
 				cs.Ackmap[id] = Acked
 				idle = false
 
-			case orderToRemove := <-deliveredOrderC:
+			case deliveredOrder = <-deliveredOrderC:
 				stashType = Remove
-				removeStash = orderToRemove
 				cs.prepNewCs(id)
-				cs.removeOrder(orderToRemove, id)
+				cs.removeOrder(deliveredOrder, id)
 				cs.Ackmap[id] = Acked
 				idle = false
 
-			case newLocalState := <-newLocalStateC:
+			case newState = <-newStateC:
 				stashType = State
-				stateStash = newLocalState
 				cs.prepNewCs(id)
-				cs.updateLocalState(newLocalState, id)
+				cs.updateState(newState, id)
 				cs.Ackmap[id] = Acked
 				idle = false
 
 			case arrivedCs := <-networkRx:
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
-				if (arrivedCs.Origin > cs.Origin && arrivedCs.SeqNum == cs.SeqNum) || arrivedCs.SeqNum > cs.SeqNum {
+				if arrivedCs.SeqNum > cs.SeqNum || (arrivedCs.Origin > cs.Origin && arrivedCs.SeqNum == cs.SeqNum) {
 					cs = arrivedCs
 					cs.makeLostPeersUnavailable(peers)
 					cs.Ackmap[id] = Acked
@@ -101,32 +98,32 @@ func Distributor(
 			default:
 			}
 
-		case notOnNetwork:
+		case offline:
 			select {
 			case <-networkRx:
 				if cs.States[id].CabRequests == [config.NumFloors]bool{} {
 					fmt.Println("Regained connection to network")
-					notOnNetwork = false
+					offline = false
 				} else {
 					cs.Ackmap[id] = NotAvailable
 				}
 
-			case newOrder := <-addOrderC:
+			case newOrder := <-newOrderC:
 				if !cs.States[id].State.Motorstop {
 					cs.Ackmap[id] = Acked
 					cs.addCabCall(newOrder, id)
 					confirmedCsC <- cs
 				}
 
-			case orderToRemove := <-deliveredOrderC:
+			case deliveredOrder := <-deliveredOrderC:
 				cs.Ackmap[id] = Acked
-				cs.removeOrder(orderToRemove, id)
+				cs.removeOrder(deliveredOrder, id)
 				confirmedCsC <- cs
 
-			case newLocalState := <-newLocalStateC:
-				if !(newLocalState.Obstructed || newLocalState.Motorstop) {
+			case newState := <-newStateC:
+				if !(newState.Obstructed || newState.Motorstop) {
 					cs.Ackmap[id] = Acked
-					cs.updateLocalState(newLocalState, id)
+					cs.updateState(newState, id)
 					confirmedCsC <- cs
 				}
 
@@ -142,7 +139,7 @@ func Distributor(
 				disconnectTimer = time.NewTimer(config.DisconnectTime)
 
 				switch {
-				case (arrivedCs.Origin > cs.Origin && arrivedCs.SeqNum == cs.SeqNum) || arrivedCs.SeqNum > cs.SeqNum:
+				case arrivedCs.SeqNum > cs.SeqNum || (arrivedCs.Origin > cs.Origin && arrivedCs.SeqNum == cs.SeqNum):
 					cs = arrivedCs
 					cs.Ackmap[id] = Acked
 					cs.makeLostPeersUnavailable(peers)
@@ -150,21 +147,22 @@ func Distributor(
 				case arrivedCs.fullyAcked(id):
 					cs = arrivedCs
 					confirmedCsC <- cs
+
 					switch {
 					case cs.Origin != id && stashType != None:
 						cs.prepNewCs(id)
 
 						switch stashType {
 						case Add:
-							cs.addOrder(addStash, id)
+							cs.addOrder(newOrder, id)
 							cs.Ackmap[id] = Acked
 
 						case Remove:
-							cs.removeOrder(removeStash, id)
+							cs.removeOrder(deliveredOrder, id)
 							cs.Ackmap[id] = Acked
 
 						case State:
-							cs.updateLocalState(stateStash, id)
+							cs.updateState(newState, id)
 							cs.Ackmap[id] = Acked
 						}
 
