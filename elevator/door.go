@@ -16,8 +16,8 @@ const (
 
 func Door(
 	doorClosedC 	chan<- bool,
-	doorOpenC 		<-chan bool,
-	obstrucedC 		chan<- bool,
+	doorOpenC		<-chan bool,
+	obstrucedC		chan<- bool,
 ) {
 
 	elevio.SetDoorOpenLamp(false)

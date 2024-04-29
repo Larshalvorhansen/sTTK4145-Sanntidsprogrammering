@@ -19,13 +19,13 @@ const (
 )
 
 func Distributor(
-	confirmedCsC 	chan<- CommonState,
+	confirmedCsC	chan<- CommonState,
 	deliveredOrderC <-chan elevio.ButtonEvent,
-	newStateC 		<-chan elevator.State,
-	networkTx 		chan<- CommonState,
-	networkRx 		<-chan CommonState,
-	peersC 			<-chan peers.PeerUpdate,
-	id 				int,
+	newStateC		<-chan elevator.State,
+	networkTx		chan<- CommonState,
+	networkRx		<-chan CommonState,
+	peersC			<-chan peers.PeerUpdate,
+	id				int,
 ) {
 
 	newOrderC := make(chan elevio.ButtonEvent, config.Buffer)
