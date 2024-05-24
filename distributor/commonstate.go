@@ -29,17 +29,17 @@ type CommonState struct {
 	States       [config.NumElevators]LocalState
 }
 
-func (cs *CommonState) addOrder(newCall elevio.ButtonEvent, id int) {
-	if newCall.Button == elevio.BT_Cab {
-		cs.States[id].CabRequests[newCall.Floor] = true
+func (cs *CommonState) addOrder(newOrder elevio.ButtonEvent, id int) {
+	if newOrder.Button == elevio.BT_Cab {
+		cs.States[id].CabRequests[newOrder.Floor] = true
 	} else {
-		cs.HallRequests[newCall.Floor][newCall.Button] = true
+		cs.HallRequests[newOrder.Floor][newOrder.Button] = true
 	}
 }
 
-func (cs *CommonState) addCabCall(newCall elevio.ButtonEvent, id int) {
-	if newCall.Button == elevio.BT_Cab {
-		cs.States[id].CabRequests[newCall.Floor] = true
+func (cs *CommonState) addCabCall(newOrder elevio.ButtonEvent, id int) {
+	if newOrder.Button == elevio.BT_Cab {
+		cs.States[id].CabRequests[newOrder.Floor] = true
 	}
 }
 
@@ -51,9 +51,9 @@ func (cs *CommonState) removeOrder(deliveredOrder elevio.ButtonEvent, id int) {
 	}
 }
 
-func (cs *CommonState) updateState(localState elevator.State, id int) {
+func (cs *CommonState) updateState(newState elevator.State, id int) {
 	cs.States[id] = LocalState{
-		State:       localState,
+		State:       newState,
 		CabRequests: cs.States[id].CabRequests,
 	}
 }
@@ -76,8 +76,8 @@ func (oldCs CommonState) equals(newCs CommonState) bool {
 	return reflect.DeepEqual(oldCs, newCs)
 }
 
-func (cs *CommonState) makeLostPeersUnavailable(p peers.PeerUpdate) {
-	for _, id := range p.Lost {
+func (cs *CommonState) makeLostPeersUnavailable(peers peers.PeerUpdate) {
+	for _, id := range peers.Lost {
 		cs.Ackmap[id] = NotAvailable
 	}
 }
