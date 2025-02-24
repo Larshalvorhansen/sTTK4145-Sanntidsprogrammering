@@ -17,6 +17,7 @@ import (
 
 type StashType int
 
+// Type som definerer none som 0, add som 1, remove som 2 og state som 3.
 const (
 	None StashType = iota
 	Add
@@ -24,27 +25,30 @@ const (
 	State
 )
 
+// Tar inn som funksjonsargumenter: sender inn f.eksempel CommonState som en input i networkRx.
+// <-chan betyr recieve-only, chan<-betyr send-only
 func Distributor(
-	confirmedCsC	chan<- CommonState,
+	confirmedCsC chan<- CommonState,
 	deliveredOrderC <-chan elevio.ButtonEvent,
-	newStateC		<-chan elevator.State,
-	networkTx		chan<- CommonState,
-	networkRx		<-chan CommonState,
-	peersC			<-chan peers.PeerUpdate,
-	id				int,
+	newStateC <-chan elevator.State,
+	networkTx chan<- CommonState,
+	networkRx <-chan CommonState,
+	peersC <-chan peers.PeerUpdate,
+	id int,
 ) {
 
 	newOrderC := make(chan elevio.ButtonEvent, config.Buffer)
 
 	go elevio.PollButtons(newOrderC)
 
-	var stashType 		StashType
-	var newOrder 		elevio.ButtonEvent
-	var deliveredOrder 	elevio.ButtonEvent
-	var newState 		elevator.State
-	var peers 			peers.PeerUpdate
-	var cs 				CommonState
+	var stashType StashType
+	var newOrder elevio.ButtonEvent
+	var deliveredOrder elevio.ButtonEvent
+	var newState elevator.State
+	var peers peers.PeerUpdate
+	var cs CommonState
 
+	//Starter disconecttimer for å sjekke om det har vert en disconnect etter en hvis tid
 	disconnectTimer := time.NewTimer(config.DisconnectTime)
 	heartbeat := time.NewTicker(config.HeartbeatTime)
 
