@@ -44,6 +44,7 @@ type ButtonEvent struct {
 }
 
 func Init(addr string, numFloors int) {
+	//"_" er bare for å unngå at variablet er brukt som noe annet. For eksempel at en funksjon heter _string istedet for string, for å unngå forvirring
 	if _initialized {
 		fmt.Println("Driver already initialized!")
 		return

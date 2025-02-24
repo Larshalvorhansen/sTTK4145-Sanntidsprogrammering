@@ -1,5 +1,11 @@
 package distributor
 
+/*
+Distributøren håndterer og distribuerer heis ordere
+Den oppdaterer states, prosesserer ordere og passer på at ting er syronisert
+Tror jeg...
+*/
+
 import (
 	"fmt"
 	"root/config"
