@@ -29,6 +29,7 @@ type CommonState struct {
 	States       [config.NumElevators]LocalState
 }
 
+
 func (cs *CommonState) addOrder(newOrder elevio.ButtonEvent, id int) {
 	if newOrder.Button == elevio.BT_Cab {
 		cs.States[id].CabRequests[newOrder.Floor] = true
@@ -58,6 +59,7 @@ func (cs *CommonState) updateState(newState elevator.State, id int) {
 	}
 }
 
+//Tar inn cs som alias og add order som argument og returnerer en bool
 func (cs *CommonState) fullyAcked(id int) bool {
 	if cs.Ackmap[id] == NotAvailable {
 		return false

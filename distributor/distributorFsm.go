@@ -57,19 +57,22 @@ func Distributor(
 
 	for {
 		select {
-		case <-disconnectTimer.C:
-			cs.makeOthersUnavailable(id)
-			fmt.Println("Lost connection to network")
-			offline = true
+		//Lytter på kanalen disconectTimer om det har skjedd noe.
+			case <-disconnectTimer.C:
+				cs.makeOthersUnavailable(id)
+				fmt.Println("Lost connection to network")
+				offline = true
 
-		case peers = <-peersC:
-			cs.makeOthersUnavailable(id)
-			idle = false
+			//Peer tar på seg jobben og oppdaterer de andre
+			case peers = <-peersC:
+				cs.makeOthersUnavailable(id)
+				idle = false
 
-		case <-heartbeat.C:
-			networkTx <- cs
+			//Send sin egen state på networket
+			case <-heartbeat.C:
+				networkTx <- cs
 
-		default:
+			default:
 		}
 
 		switch {
@@ -128,7 +131,9 @@ func Distributor(
 			case deliveredOrder := <-deliveredOrderC:
 				cs.Ackmap[id] = Acked
 				cs.removeOrder(deliveredOrder, id)
-				confirmedCsC <- cs
+				confirmedCsC <- cs peers = <-peersC:
+				cs.makeOthersUnavailable(id)
+				idle = false
 
 			case newState := <-newStateC:
 				if !(newState.Obstructed || newState.Motorstop) {
@@ -146,7 +151,7 @@ func Distributor(
 				if arrivedCs.SeqNum < cs.SeqNum {
 					break
 				}
-				disconnectTimer = time.NewTimer(config.DisconnectTime)
+				disconnectTimer = time.NewTimer(config.DisconnectTime) //Restarter timer
 
 				switch {
 				case arrivedCs.SeqNum > cs.SeqNum || (arrivedCs.Origin > cs.Origin && arrivedCs.SeqNum == cs.SeqNum):
